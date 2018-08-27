@@ -83,6 +83,8 @@ export default class CameraModule {
       this.videoEl.srcObject = mediaStream;
       this.videoEl.play();
       return mediaStream;
+    }).catch((error) => {
+      console.error(error);
     });
   }
 
