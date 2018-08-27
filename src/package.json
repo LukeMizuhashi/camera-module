@@ -1,0 +1,6 @@
+{
+  "name": "camera-module-for-test",
+  "main": "./constructor.js",
+  "version": "0.0.0"
+}
+
