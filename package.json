@@ -12,7 +12,6 @@
     "url": "git+ssh://git@github.com:LukeMizuhashi/camera-module.git"
   },
   "author": "Luke Mizuhashi",
-  "private": "true",
   "license": "SEE LICENSE IN LICENSE.md",
   "bugs": {
     "url": "https://github.com/LukeMizuhashi/camera-module/issues"

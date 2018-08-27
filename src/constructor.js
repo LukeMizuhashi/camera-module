@@ -7,7 +7,6 @@ export default class CameraModule {
 
   constructor(options) {
     
-    // TODO Options currently do nothing.
     this.options = new Options(options);
 
     this.device = {
@@ -38,7 +37,7 @@ export default class CameraModule {
   }
 
   start() {
-    return navigator.mediaDevices
+    let result = navigator.mediaDevices
       .enumerateDevices()
       .then((deviceInfoList) => {
         deviceInfoList.forEach((thisDevice) => {
@@ -46,10 +45,14 @@ export default class CameraModule {
           organizeDeviceInfo.call(this,thisDevice);
         });
         setIdListPointers.call(this);
-      }).then(() => {
-        return this.getCurrentVideoStream();  
       })
     ;
+    if (this.options.getStreamOnStart) {
+      result.then(() => {
+        return this.getCurrentVideoStream();  
+      });
+    }
+    return result;
   }
 
   getHtml() {

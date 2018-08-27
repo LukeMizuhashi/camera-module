@@ -1,8 +1,7 @@
 export default class Options {
   constructor(userInput) {
     // Defaults
-    this.playsinline = true;
-    this.autoplay = true;
+    this.getStreamOnStart = false;
 
     // Copy user settings / override defaults
     if (userInput) {
