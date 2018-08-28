@@ -1,7 +1,7 @@
 export default class Options {
   constructor(userInput) {
     // Defaults
-    this.getStreamOnStart = false;
+    // this.someSetting = false;
 
     // Copy user settings / override defaults
     if (userInput) {

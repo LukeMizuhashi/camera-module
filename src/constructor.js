@@ -1,7 +1,4 @@
 import Options from './options/constructor.js';
-import validateDeviceInfo from './validateDeviceInfo.js';
-import organizeDeviceInfo from './organizeDeviceInfo.js';
-import setIdListPointers from './setIdListPointers.js';
 
 export default class CameraModule {
 
@@ -9,83 +6,121 @@ export default class CameraModule {
     
     this.options = new Options(options);
 
-    this.device = {
-      videoinput: {},
-      audioinput: {},
-      audiooutput: {},
-      all: {},
-    };
-
-    this.deviceIdList = {
-      videoinput: [],
-      audioinput: [],
-      audiooutput: [],
-      all: [],
-    };
-
-    this.currentVideoinputDevice = undefined; 
-    this.currentAudioinputDevice = undefined;
-    this.currentAudiooutputDevice = undefined;
+    this.supportedConstraints = {};
 
     this.videoEl = document.createElement('video');
     this.videoEl.setAttribute('playsinline','');
     this.videoEl.setAttribute('autoplay','');
   }
 
-  getNumberOfVideoInputDevices() {
-    return this.deviceIdList.videoinput.length;
-  }
-
   start() {
-    let result = navigator.mediaDevices
-      .enumerateDevices()
-      .then((deviceInfoList) => {
-        deviceInfoList.forEach((thisDevice) => {
-          validateDeviceInfo.call(this,thisDevice);
-          organizeDeviceInfo.call(this,thisDevice);
-        });
-        setIdListPointers.call(this);
-      })
-    ;
-    if (this.options.getStreamOnStart) {
-      result.then(() => {
-        return this.getCurrentVideoStream();  
-      });
+    this.supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
+  }
+
+  switchVideoStream() {
+    let facingMode = undefined;
+    switch(this.facingMode) {
+      case 'environment':
+        facingMode = 'user';
+        break;
+      case 'user':
+        facingMode = 'environment';
+        break;
+      case 'left':
+        facingMode = 'right';
+        break;
+      case 'right':
+        facingMode = 'left';
+        break;
+      default:
+        console.warn(
+          `Encountered unhandled video track facing mode: ${trackSettings}`,
+          trackSettings 
+        );
+        break;
     }
-    return result;
+    return this.getVideoStream(facingMode);
   }
 
-  getHtml() {
-    return this.videoEl;
-  }
-
-  getNextVideoStream() {
-    this.currentVideoinputDevice++;
-    if (this.currentVideoinputDevice == this.deviceIdList.videoinput.length) {
-      this.currentVideoinputDevice = 0;
-    }
-    return this.getCurrentVideoStream();
-  }
-
-  getCurrentVideoStream() {
+  getVideoStream(facingMode) {
     const options = {
       audio: true,
       video: {
-        deviceId: {
-          exact: this.deviceIdList.videoinput[this.currentVideoinputDevice]
-        }
-      }
+        facingMode: facingMode || 'environment'
+      },
     };
-    return navigator.mediaDevices.getUserMedia(options).then((mediaStream) => {
-      mediaStream.getAudioTracks().forEach((audioTrack) => {
-        audioTrack.enabled = false
-      });
-      this.videoEl.srcObject = mediaStream;
-      this.videoEl.play();
-      return mediaStream;
-    }).catch((error) => {
-      console.error(error);
-    });
+    return navigator.mediaDevices.getUserMedia(options)
+
+      .then((mediaStream) => {
+        const promises = [];
+        this.facingMode = options.video.facingMode;
+
+        mediaStream.getAudioTracks().forEach((track) => {
+          const capabilities = track.getCapabilities();
+          const constraints = {};
+          track.enabled = false;
+
+          if (this.supportedConstraints.sampleRate
+          && capabilities.sampleRate
+          && capabilities.sampleRate.max) {
+            constraints.sampleRate = capabilities.sampleRate.max;
+          }
+
+          const promise = track.applyConstraints(constraints)
+            .catch((error) => {
+              console.warn(
+                'Encountered error while requesting constraint on track',
+                error,
+                constraints
+              );
+            })
+          ;
+          promises.push(promise);
+        });
+
+        mediaStream.getVideoTracks().forEach((track) => {
+          const capabilities = track.getCapabilities();
+          const constraints = {};
+
+          if (this.supportedConstraints.frameRate
+          && capabilities.frameRate
+          && capabilities.frameRate.max) {
+            constraints.frameRate = capabilities.frameRate.max;
+          }
+
+          if (this.supportedConstraints.width
+          && capabilities.width
+          && capabilities.width.max) {
+            constraints.width = capabilities.width.max;
+          }
+
+          const promise = track.applyConstraints(constraints)
+            .catch((error) => {
+              console.warn(
+                'Encountered error while requesting constraint on track',
+                error,
+                constraints
+              );
+            })
+          ;
+          promises.push(promise);
+        });
+
+        this.videoEl.srcObject = mediaStream;
+        return Promise.all(promises);
+
+      }).then(() => {
+        return this.videoEl;
+      }).catch((error) => {
+        this.facingMode = null;
+        console.warn(
+          'Encountered error while attempting to get user media',
+          error,
+          options
+        );
+
+      })
+    ; 
   }
 
 }
