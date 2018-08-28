@@ -34,8 +34,7 @@ export default class CameraModule {
         break;
       default:
         console.warn(
-          `Encountered unhandled video track facing mode: ${trackSettings}`,
-          trackSettings 
+          `Encountered unhandled video track facing mode: ${this.facingMode}`
         );
         break;
     }
@@ -82,16 +81,10 @@ export default class CameraModule {
           const capabilities = track.getCapabilities();
           const constraints = {};
 
-          if (this.supportedConstraints.frameRate
-          && capabilities.frameRate
-          && capabilities.frameRate.max) {
-            constraints.frameRate = capabilities.frameRate.max;
-          }
-
-          if (this.supportedConstraints.width
-          && capabilities.width
-          && capabilities.width.max) {
-            constraints.width = capabilities.width.max;
+          if (this.supportedConstraints.aspectRatio
+          && capabilities.aspectRatio
+          && capabilities.aspectRatio.max) {
+            constraints.aspectRatio = capabilities.aspectRatio.max;
           }
 
           const promise = track.applyConstraints(constraints)
