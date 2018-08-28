@@ -1,6 +1,6 @@
 {
   "name": "camera-module",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Switch between cameras on mobile devices easily.",
   "main": "src/constructor.js",
   "scripts": {
