@@ -38,10 +38,11 @@ export default class CameraModule {
         );
         break;
     }
-    return this.getVideoStream(facingMode);
+    return this.getVideoElement(facingMode);
   }
 
-  getVideoStream(facingMode) {
+  getVideoElement(facingMode) {
+
     const options = {
       audio: true,
       video: {
@@ -49,7 +50,6 @@ export default class CameraModule {
       },
     };
     return navigator.mediaDevices.getUserMedia(options)
-
       .then((mediaStream) => {
         const promises = [];
         this.facingMode = options.video.facingMode;
@@ -80,6 +80,12 @@ export default class CameraModule {
         mediaStream.getVideoTracks().forEach((track) => {
           const capabilities = track.getCapabilities();
           const constraints = {};
+
+          if (this.supportedConstraints.height
+          && capabilities.height
+          && capabilities.height.max) {
+            constraints.height = capabilities.height.max;
+          }
 
           if (this.supportedConstraints.aspectRatio
           && capabilities.aspectRatio
